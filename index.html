@@ -3,77 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>超多機能 共有メモ (標準テキスト版)</title>
+  <title>引き継ぎ通知付き 共有メモ</title>
   <style>
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background-color: #f4f7f6;
-      color: #333;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-    }
-    .memo-container {
-      background-color: #ffffff;
-      width: 100%;
-      max-width: 1100px;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.05);
-      position: relative;
-    }
-    h1 {
-      margin-top: 0; font-size: 24px; color: #2c3e50;
-      border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; }
+    .memo-container { background-color: #ffffff; width: 100%; max-width: 1100px; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.05); position: relative; }
+    h1 { margin-top: 0; font-size: 24px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     .header-badges { display: flex; gap: 10px; align-items: center; }
-    .role-badge { font-size: 14px; padding: 5px 12px; border-radius: 20px; font-weight: bold; }
+    .role-badge { font-size: 14px; padding: 5px 12px; border-radius: 20px; font-weight: bold; transition: background-color 0.3s; }
     .viewers { font-size: 14px; background-color: #f1f2f6; color: #57606f; padding: 5px 12px; border-radius: 20px; }
-
-    .url-box {
-      background-color: #f8f9fa; padding: 10px 15px; border-radius: 8px;
-      margin-bottom: 15px; border: 1px solid #e9ecef; display: flex; align-items: center; gap: 10px;
-    }
+    .url-box { background-color: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef; display: flex; align-items: center; gap: 10px; }
     .url-box input { flex: 1; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
-    
-    /* ツールバー */
-    .toolbar {
-      display: flex; flex-wrap: wrap; gap: 8px; background-color: #f8f9fa;
-      padding: 10px; border: 1px solid #ddd; border-bottom: none; border-radius: 8px 8px 0 0; align-items: center;
-    }
-    .toolbar select, .toolbar input[type="color"], .toolbar input[type="text"], .toolbar input[type="time"], .toolbar button {
-      padding: 5px 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; background-color: #fff;
-    }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; background-color: #f8f9fa; padding: 10px; border: 1px solid #ddd; border-bottom: none; border-radius: 8px 8px 0 0; align-items: center; }
+    .toolbar select, .toolbar input[type="color"], .toolbar input[type="text"], .toolbar input[type="time"], .toolbar button { padding: 5px 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; background-color: #fff; }
     .toolbar button { cursor: pointer; display: flex; align-items: center; font-weight: bold; color: #444; }
     .toolbar button:hover { background-color: #e9ecef; }
-    
     .toolbar-group { display: flex; gap: 5px; border-left: 2px solid #ddd; padding-left: 10px; align-items: center; }
     .toolbar-group.right-align { margin-left: auto; }
-
-    /* エディタ本体 */
-    #editor {
-      width: 100%; height: 550px; padding: 15px; font-size: 16px; line-height: 1.6;
-      border: 1px solid #ddd; border-radius: 0 0 8px 8px; box-sizing: border-box;
-      overflow-y: auto; background-color: #fff; transition: background-color 0.3s;
-      position: relative; scroll-behavior: smooth;
-    }
+    #editor { width: 100%; height: 550px; padding: 15px; font-size: 16px; line-height: 1.6; border: 1px solid #ddd; border-radius: 0 0 8px 8px; box-sizing: border-box; overflow-y: auto; background-color: #fff; transition: background-color 0.3s; position: relative; scroll-behavior: smooth; }
     #editor:focus { outline: none; border-color: #3498db; }
     #editor[contenteditable="false"] { background-color: #fafafa; color: #555; cursor: not-allowed; }
     #editor table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
     #editor th, #editor td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
     #editor img { max-width: 100%; height: auto; display: block; margin: 10px 0; border: 1px solid #eee; border-radius: 8px; }
-
     .time-stamp { background-color: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #ffeeba; display: inline-block; margin: 0 2px; }
-
     .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
     .status { font-size: 14px; color: #7f8c8d; }
     .primary-btn { background-color: #3498db; color: white; border: none; padding: 10px 20px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .primary-btn:hover { background-color: #2980b9; }
 
-    /* モーダル */
+    /* 通知用トーストのスタイル */
+    #notification {
+      position: fixed; top: 20px; right: 20px; background-color: #2ecc71; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: bold; z-index: 2000; display: none; opacity: 0; transition: opacity 0.5s;
+    }
+
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; }
     .modal-content h3 { margin: 0 0 10px 0; font-size: 18px; color: #2c3e50; }
@@ -88,6 +50,8 @@
   </style>
 </head>
 <body>
+
+  <div id="notification">👑 あなたが新しい編集者になりました！</div>
 
   <div class="memo-container">
     <h1>
@@ -106,36 +70,19 @@
 
     <div class="toolbar" id="toolbar">
       <select id="dataFormatSelect" title="文字を選択して形式を変換" style="background-color: #e8f8f5; border-color: #1abc9c; font-weight: bold;">
-        <option value="">データ形式...</option>
-        <option value="number">数値</option>
-        <option value="comma">コンマ (,)</option>
-        <option value="currency">通貨 (¥)</option>
-        <option value="accounting">会計</option>
-        <option value="percent">パーセンテージ (%)</option>
-        <option value="fraction">分数</option>
-        <option value="exponential">指数</option>
-        <option value="shortDate">短い日付</option>
-        <option value="longDate">長い日付</option>
-        <option value="time">時刻</option>
-        <option value="string">文字列</option>
+        <option value="">データ形式...</option><option value="number">数値</option><option value="comma">コンマ (,)</option><option value="currency">通貨 (¥)</option><option value="accounting">会計</option><option value="percent">パーセンテージ (%)</option><option value="fraction">分数</option><option value="exponential">指数</option><option value="shortDate">短い日付</option><option value="longDate">長い日付</option><option value="time">時刻</option><option value="string">文字列</option>
       </select>
-
       <span style="border-left: 1px solid #ccc; height: 20px; margin: 0 2px;"></span>
-
       <select id="fontSelect"><option value="">書体...</option><option value="Arial">Arial</option><option value="'Hiragino Kaku Gothic ProN', sans-serif">ヒラギノ角ゴ</option><option value="'Yu Mincho', serif">游明朝</option></select>
       <select id="fontSizeSelect"><option value="">サイズ...</option><option value="2">小</option><option value="3">標準</option><option value="5">大</option><option value="7">最大</option></select>
-      
       <input type="color" id="colorPicker" value="#e74c3c" title="文字色">
       <button id="colorBtn">色適用</button>
-      
       <button id="removeFormatBtn" title="選択した文字の色やサイズをリセットする" style="color: #c0392b;">書式クリア</button>
-
       <div class="toolbar-group">
         <button id="checkboxBtn">ToDo</button>
         <input type="time" id="timeInput" title="時間を指定">
         <button id="insertTimeBtn">時間挿入</button>
       </div>
-
       <div class="toolbar-group">
         <button id="tableBtn">表挿入</button>
         <button id="openGraphBtn">グラフ作成</button>
@@ -143,7 +90,6 @@
         <input type="file" id="imageInput" accept="image/*" style="display: none;">
         <button id="insertImageBtn">画像</button>
       </div>
-
       <div class="toolbar-group right-align">
         <input type="text" id="findText" placeholder="検索" style="width: 50px;">
         <span id="matchCountDisplay" style="font-size: 11px; color: #7f8c8d; width: 30px; text-align: center;">0/0</span>
@@ -193,9 +139,10 @@
     const editor = document.getElementById('editor');
     const saveStatus = document.getElementById('saveStatus');
     const roleBadge = document.getElementById('roleBadge');
+    const notification = document.getElementById('notification');
     const STORAGE_KEY = 'shared_memo_rich_' + roomId;
     const HOST_KEY = 'shared_memo_host_' + roomId;
-    let saveTimeout; let isHost = false; let savedSelection = null;
+    let saveTimeout; let isHost = false;
 
     document.getElementById('urlDisplay').value = window.location.href;
     const now = new Date();
@@ -206,25 +153,57 @@
       if (savedData) editor.innerHTML = savedData;
     });
 
+    // 通知を表示する関数
+    function showNotification(message) {
+      notification.textContent = message;
+      notification.style.display = 'block';
+      setTimeout(() => { notification.style.opacity = '1'; }, 10);
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => { notification.style.display = 'none'; }, 500);
+      }, 4000); // 4秒後に消える
+    }
+
     function setRole(role) {
       if (role === 'host') {
         isHost = true; editor.setAttribute('contenteditable', 'true');
         document.getElementById('toolbar').style.display = 'flex'; document.getElementById('clearBtn').style.display = 'inline-block';
-        roleBadge.textContent = 'あなたは編集者（1番目）です';
+        roleBadge.textContent = '👑 あなたは編集者（1番目）です';
         roleBadge.style.backgroundColor = '#e8f5e9'; roleBadge.style.color = '#2e7d32'; saveStatus.textContent = '最新の状態です';
       } else {
         isHost = false; editor.setAttribute('contenteditable', 'false');
         document.getElementById('toolbar').style.display = 'none'; document.getElementById('clearBtn').style.display = 'none';
-        roleBadge.textContent = '閲覧のみ（他の人が編集中）';
+        roleBadge.textContent = '👀 閲覧のみ（他の人が編集中）';
         roleBadge.style.backgroundColor = '#fff3e0'; roleBadge.style.color = '#e65100'; saveStatus.textContent = '※ 編集は最初にアクセスした人のみ可能です';
       }
     }
 
+    // --- 引き継ぎの判定処理 ---
+    let isInitialCheck = true;
     function maintainHostStatus() {
       const hostDataStr = localStorage.getItem(HOST_KEY); const nowData = Date.now(); let hostData = hostDataStr ? JSON.parse(hostDataStr) : null;
-      if (!hostData || nowData - hostData.lastSeen > 2500) { localStorage.setItem(HOST_KEY, JSON.stringify({ id: myId, lastSeen: nowData })); if (!isHost) setRole('host'); } 
-      else if (hostData.id === myId) { localStorage.setItem(HOST_KEY, JSON.stringify({ id: myId, lastSeen: nowData })); if (!isHost) setRole('host'); } 
-      else { if (isHost || roleBadge.textContent === '判定中...') { setRole('guest'); channel.postMessage({ type: 'request_sync' }); } }
+      
+      // ホストがいない、または2.5秒以上応答がない（退出した）場合
+      if (!hostData || nowData - hostData.lastSeen > 2500) {
+        localStorage.setItem(HOST_KEY, JSON.stringify({ id: myId, lastSeen: nowData }));
+        if (!isHost) {
+          setRole('host');
+          // 最初から自分が1番目だった時以外（＝途中で引き継いだ時）は通知を出す
+          if (!isInitialCheck) showNotification('👑 前の編集者が退出したため、あなたが新しい編集者になりました！');
+        }
+      } 
+      // 自分がすでにホストとして君臨している場合
+      else if (hostData.id === myId) {
+        localStorage.setItem(HOST_KEY, JSON.stringify({ id: myId, lastSeen: nowData }));
+        if (!isHost) setRole('host');
+      } 
+      // 別の誰かがホストの場合
+      else {
+        if (isHost || roleBadge.textContent === '判定中...') {
+          setRole('guest'); channel.postMessage({ type: 'request_sync' });
+        }
+      }
+      isInitialCheck = false;
     }
 
     let activeTabs = new Set([myId]);
@@ -251,63 +230,35 @@
       currentSearchIndex = -1; lastSearchQuery = ''; document.getElementById('matchCountDisplay').textContent = '0/0';
     });
 
-    // データ形式変換
+    // 各種ツールバー機能
     document.getElementById('dataFormatSelect').addEventListener('change', (e) => {
-      const formatType = e.target.value;
-      if (!formatType) return;
-      const sel = window.getSelection();
-      const originalText = sel.toString().trim();
-      if (!sel.rangeCount || originalText.length === 0) {
-        alert('フォーマットを変更したい「文字」や「数字」をマウスで選択（ハイライト）してから選んでください。');
-        e.target.value = ''; editor.focus(); return;
-      }
-      const numClean = originalText.replace(/[,¥￥\s%]/g, '');
-      const num = parseFloat(numClean);
-      const isNum = !isNaN(num) && numClean !== '';
-      let date = new Date(originalText);
-      let result = originalText;
-
+      const formatType = e.target.value; if (!formatType) return;
+      const sel = window.getSelection(); const originalText = sel.toString().trim();
+      if (!sel.rangeCount || originalText.length === 0) { alert('フォーマットを変更したい「文字」や「数字」をマウスで選択（ハイライト）してから選んでください。'); e.target.value = ''; editor.focus(); return; }
+      const numClean = originalText.replace(/[,¥￥\s%]/g, ''); const num = parseFloat(numClean); const isNum = !isNaN(num) && numClean !== '';
+      let date = new Date(originalText); let result = originalText;
       switch(formatType) {
         case 'number': if (isNum) result = num.toString(); break;
         case 'comma': if (isNum) result = new Intl.NumberFormat('ja-JP').format(num); break;
         case 'currency': if (isNum) result = new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(num); break;
         case 'accounting': if (isNum) result = '¥ ' + new Intl.NumberFormat('ja-JP').format(num); break;
         case 'percent': if (isNum) result = num.toString() + '%'; break;
-        case 'fraction':
-          if (isNum) {
-            const whole = Math.floor(Math.abs(num)); const frac = Math.abs(num) - whole;
-            if (frac === 0) { result = num.toString(); } else {
-              const len = frac.toString().length - 2; let den = Math.pow(10, len); let numTop = Math.round(frac * den);
-              const gcd = (a, b) => b ? gcd(b, a % b) : a; const divisor = gcd(numTop, den);
-              result = (num < 0 ? '-' : '') + (whole > 0 ? whole + ' ' : '') + (numTop / divisor) + '/' + (den / divisor);
-            }
-          } break;
+        case 'fraction': if (isNum) { const whole = Math.floor(Math.abs(num)); const frac = Math.abs(num) - whole; if (frac === 0) { result = num.toString(); } else { const len = frac.toString().length - 2; let den = Math.pow(10, len); let numTop = Math.round(frac * den); const gcd = (a, b) => b ? gcd(b, a % b) : a; const divisor = gcd(numTop, den); result = (num < 0 ? '-' : '') + (whole > 0 ? whole + ' ' : '') + (numTop / divisor) + '/' + (den / divisor); } } break;
         case 'exponential': if (isNum) result = num.toExponential(2); break;
         case 'shortDate': date = new Date(originalText); if (!isNaN(date)) result = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}`; break;
         case 'longDate': date = new Date(originalText); if (!isNaN(date)) result = `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日`; break;
-        case 'time':
-          date = new Date(originalText);
-          if (!isNaN(date)) { result = `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}:${String(date.getSeconds()).padStart(2,'0')}`; } 
-          else if (/^\d{1,2}:\d{2}$/.test(originalText)) { result = originalText + ':00'; } break;
+        case 'time': date = new Date(originalText); if (!isNaN(date)) { result = `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}:${String(date.getSeconds()).padStart(2,'0')}`; } else if (/^\d{1,2}:\d{2}$/.test(originalText)) { result = originalText + ':00'; } break;
         case 'string': result = originalText.replace(/[,¥￥\s%]/g, ''); break;
       }
       document.execCommand('insertText', false, result); saveMemo(); e.target.value = ''; editor.focus();
     });
 
-    // 書式・装飾
     document.getElementById('fontSelect').addEventListener('change', (e) => { document.execCommand('fontName', false, e.target.value); editor.focus(); });
     document.getElementById('fontSizeSelect').addEventListener('change', (e) => { document.execCommand('fontSize', false, e.target.value); editor.focus(); });
     document.getElementById('colorPicker').addEventListener('input', (e) => { document.getElementById('colorBtn').style.color = e.target.value; });
     document.getElementById('colorBtn').addEventListener('click', () => { document.execCommand('foreColor', false, document.getElementById('colorPicker').value); editor.focus(); });
-    
-    // 書式クリア（普通の文字に戻す機能）
-    document.getElementById('removeFormatBtn').addEventListener('click', () => {
-      document.execCommand('removeFormat', false, null);
-      editor.focus();
-      saveMemo();
-    });
+    document.getElementById('removeFormatBtn').addEventListener('click', () => { document.execCommand('removeFormat', false, null); editor.focus(); saveMemo(); });
 
-    // 挿入機能
     document.getElementById('checkboxBtn').addEventListener('click', () => { document.execCommand('insertHTML', false, `<input type="checkbox" style="width:16px; height:16px; vertical-align:middle; cursor:pointer;">&nbsp;`); editor.focus(); saveMemo(); });
     editor.addEventListener('change', (e) => { if (e.target && e.target.type === 'checkbox') { if (e.target.checked) e.target.setAttribute('checked', 'checked'); else e.target.removeAttribute('checked'); saveMemo(); } });
     document.getElementById('insertTimeBtn').addEventListener('click', () => { const timeVal = document.getElementById('timeInput').value; if (!timeVal) return; document.execCommand('insertHTML', false, `<span class="time-stamp" contenteditable="false">🕒 ${timeVal}</span>&nbsp;`); editor.focus(); saveMemo(); });
@@ -317,78 +268,29 @@
     document.getElementById('insertImageBtn').addEventListener('click', () => imageInput.click());
     imageInput.addEventListener('change', (e) => {
       const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
-      reader.onload = function(ev) {
-        const img = new Image(); img.onload = function() {
-          const canvas = document.createElement('canvas'); let w = img.width, h = img.height; const MAX_W = 800;
-          if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
-          canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          document.execCommand('insertHTML', false, `<br><img src="${canvas.toDataURL('image/jpeg', 0.8)}" alt="画像"><br>`); saveMemo();
-        }; img.src = ev.target.result;
-      }; reader.readAsDataURL(file); e.target.value = '';
+      reader.onload = function(ev) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); let w = img.width, h = img.height; const MAX_W = 800; if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; } canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h); document.execCommand('insertHTML', false, `<br><img src="${canvas.toDataURL('image/jpeg', 0.8)}" alt="画像"><br>`); saveMemo(); }; img.src = ev.target.result; }; reader.readAsDataURL(file); e.target.value = '';
     });
 
-    // 検索・置換
     let searchResults = []; let currentSearchIndex = -1; let lastSearchQuery = '';
     document.getElementById('searchNextBtn').addEventListener('click', () => {
       const query = document.getElementById('findText').value; const matchDisplay = document.getElementById('matchCountDisplay');
       if (!query) { matchDisplay.textContent = '0/0'; return; }
       if (query !== lastSearchQuery || currentSearchIndex === -1) {
         searchResults = [];
-        function traverseNodes(node) {
-          if (node.nodeType === 3) {
-            let text = node.nodeValue; let startIndex = 0; let index;
-            while ((index = text.indexOf(query, startIndex)) > -1) { searchResults.push({ node: node, start: index, end: index + query.length }); startIndex = index + query.length; }
-          } else { node.childNodes.forEach(child => traverseNodes(child)); }
-        }
+        function traverseNodes(node) { if (node.nodeType === 3) { let text = node.nodeValue; let startIndex = 0; let index; while ((index = text.indexOf(query, startIndex)) > -1) { searchResults.push({ node: node, start: index, end: index + query.length }); startIndex = index + query.length; } } else { node.childNodes.forEach(child => traverseNodes(child)); } }
         traverseNodes(editor); lastSearchQuery = query; currentSearchIndex = -1;
       }
       if (searchResults.length === 0) { matchDisplay.textContent = '0件'; return; }
-      currentSearchIndex++; if (currentSearchIndex >= searchResults.length) currentSearchIndex = 0;
-      matchDisplay.textContent = `${currentSearchIndex + 1}/${searchResults.length}`;
+      currentSearchIndex++; if (currentSearchIndex >= searchResults.length) currentSearchIndex = 0; matchDisplay.textContent = `${currentSearchIndex + 1}/${searchResults.length}`;
       const match = searchResults[currentSearchIndex]; const range = document.createRange();
-      try {
-        range.setStart(match.node, match.start); range.setEnd(match.node, match.end);
-        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-        const rect = range.getBoundingClientRect(); const editorRect = editor.getBoundingClientRect();
-        if (rect.bottom > editorRect.bottom || rect.top < editorRect.top) { editor.scrollTop += (rect.top - editorRect.top) - (editorRect.height / 2); }
-      } catch(e) { currentSearchIndex = -1; document.getElementById('searchNextBtn').click(); }
+      try { range.setStart(match.node, match.start); range.setEnd(match.node, match.end); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); const rect = range.getBoundingClientRect(); const editorRect = editor.getBoundingClientRect(); if (rect.bottom > editorRect.bottom || rect.top < editorRect.top) { editor.scrollTop += (rect.top - editorRect.top) - (editorRect.height / 2); } } catch(e) { currentSearchIndex = -1; document.getElementById('searchNextBtn').click(); }
     });
     document.getElementById('findText').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('searchNextBtn').click(); } });
-    document.getElementById('replaceBtn').addEventListener('click', () => {
-      const fStr = document.getElementById('findText').value, rStr = document.getElementById('replaceText').value; if (!fStr) return;
-      function rNode(node) {
-        if (node.nodeType === 3) { const re = new RegExp(fStr, 'g'); if (re.test(node.nodeValue)) node.nodeValue = node.nodeValue.replace(re, rStr); } 
-        else { node.childNodes.forEach(child => rNode(child)); }
-      } rNode(editor); saveMemo(); alert(`置き換え完了`);
-    });
+    document.getElementById('replaceBtn').addEventListener('click', () => { const fStr = document.getElementById('findText').value, rStr = document.getElementById('replaceText').value; if (!fStr) return; function rNode(node) { if (node.nodeType === 3) { const re = new RegExp(fStr, 'g'); if (re.test(node.nodeValue)) node.nodeValue = node.nodeValue.replace(re, rStr); } else { node.childNodes.forEach(child => rNode(child)); } } rNode(editor); saveMemo(); alert(`置き換え完了`); });
 
-    // モーダル処理（グラフ・お絵かき）
-    const graphModal = document.getElementById('graphModal');
-    document.getElementById('openGraphBtn').addEventListener('click', () => { graphModal.style.display = 'flex'; });
-    document.getElementById('closeGraphBtn').addEventListener('click', () => { graphModal.style.display = 'none'; });
-    document.getElementById('insertGraphBtn').addEventListener('click', () => {
-      const t = document.getElementById('gType').value, l = document.getElementById('gLabels').value.split(','), d = document.getElementById('gData').value.split(',').map(Number);
-      const c = ['#3498db', '#e74c3c', '#f1c40f']; const bg = l.map((_, i) => c[i % c.length]);
-      const conf = { type: t, data: { labels: l, datasets: [{ data: d, backgroundColor: bg }] }, options: { plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 14 } } } } };
-      const url = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(conf))}&w=400&h=250`;
-      graphModal.style.display = 'none'; document.execCommand('insertHTML', false, `<br><img src="${url}" alt="グラフ"><br>`); saveMemo();
-    });
-
-    const drawModal = document.getElementById('drawModal'), canvas = document.getElementById('drawingCanvas'), ctx = canvas.getContext('2d'); let isDraw = false;
-    function resetC() { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-    document.getElementById('openDrawBtn').addEventListener('click', () => { resetC(); drawModal.style.display = 'flex'; });
-    document.getElementById('closeDrawBtn').addEventListener('click', () => { drawModal.style.display = 'none'; });
-    document.getElementById('clearCanvasBtn').addEventListener('click', resetC);
-    function getP(e) { const r = canvas.getBoundingClientRect(); const x = e.touches ? e.touches[0].clientX : e.clientX; const y = e.touches ? e.touches[0].clientY : e.clientY; return { x: x - r.left, y: y - r.top }; }
-    function sD(e) { isDraw = true; const p = getP(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }
-    function d(e) { if (!isDraw) return; const p = getP(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = document.getElementById('penColor').value; ctx.lineWidth = document.getElementById('penSize').value; ctx.lineCap = 'round'; ctx.stroke(); e.preventDefault(); }
-    function eD() { isDraw = false; ctx.closePath(); }
-    canvas.addEventListener('mousedown', sD); canvas.addEventListener('mousemove', d); canvas.addEventListener('mouseup', eD); canvas.addEventListener('mouseout', eD);
-    canvas.addEventListener('touchstart', sD, {passive: false}); canvas.addEventListener('touchmove', d, {passive: false}); canvas.addEventListener('touchend', eD);
-    document.getElementById('insertDrawBtn').addEventListener('click', () => { drawModal.style.display = 'none'; document.execCommand('insertHTML', false, `<br><img src="${canvas.toDataURL('image/png')}" alt="絵"><br>`); saveMemo(); });
-
-    document.getElementById('copyUrlBtn').addEventListener('click', () => { document.getElementById('urlDisplay').select(); document.execCommand('copy'); alert('URLをコピーしました！'); });
-    document.getElementById('clearBtn').addEventListener('click', () => { if(confirm('本当に消去しますか？')) { editor.innerHTML = ''; saveMemo(); } });
+    const graphModal = document.getElementById('graphModal'); document.getElementById('openGraphBtn').addEventListener('click', () => { graphModal.style.display = 'flex'; }); document.getElementById('closeGraphBtn').addEventListener('click', () => { graphModal.style.display = 'none'; }); document.getElementById('insertGraphBtn').addEventListener('click', () => { const t = document.getElementById('gType').value, l = document.getElementById('gLabels').value.split(','), d = document.getElementById('gData').value.split(',').map(Number); const c = ['#3498db', '#e74c3c', '#f1c40f']; const bg = l.map((_, i) => c[i % c.length]); const conf = { type: t, data: { labels: l, datasets: [{ data: d, backgroundColor: bg }] }, options: { plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 14 } } } } }; const url = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(conf))}&w=400&h=250`; graphModal.style.display = 'none'; document.execCommand('insertHTML', false, `<br><img src="${url}" alt="グラフ"><br>`); saveMemo(); });
+    const drawModal = document.getElementById('drawModal'), canvas = document.getElementById('drawingCanvas'), ctx = canvas.getContext('2d'); let isDraw = false; function resetC() { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height); } document.getElementById('openDrawBtn').addEventListener('click', () => { resetC(); drawModal.style.display = 'flex'; }); document.getElementById('closeDrawBtn').addEventListener('click', () => { drawModal.style.display = 'none'; }); document.getElementById('clearCanvasBtn').addEventListener('click', resetC); function getP(e) { const r = canvas.getBoundingClientRect(); const x = e.touches ? e.touches[0].clientX : e.clientX; const y = e.touches ? e.touches[0].clientY : e.clientY; return { x: x - r.left, y: y - r.top }; } function sD(e) { isDraw = true; const p = getP(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); } function d(e) { if (!isDraw) return; const p = getP(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = document.getElementById('penColor').value; ctx.lineWidth = document.getElementById('penSize').value; ctx.lineCap = 'round'; ctx.stroke(); e.preventDefault(); } function eD() { isDraw = false; ctx.closePath(); } canvas.addEventListener('mousedown', sD); canvas.addEventListener('mousemove', d); canvas.addEventListener('mouseup', eD); canvas.addEventListener('mouseout', eD); canvas.addEventListener('touchstart', sD, {passive: false}); canvas.addEventListener('touchmove', d, {passive: false}); canvas.addEventListener('touchend', eD); document.getElementById('insertDrawBtn').addEventListener('click', () => { drawModal.style.display = 'none'; document.execCommand('insertHTML', false, `<br><img src="${canvas.toDataURL('image/png')}" alt="絵"><br>`); saveMemo(); });
+    document.getElementById('copyUrlBtn').addEventListener('click', () => { document.getElementById('urlDisplay').select(); document.execCommand('copy'); alert('URLをコピーしました！'); }); document.getElementById('clearBtn').addEventListener('click', () => { if(confirm('本当に消去しますか？')) { editor.innerHTML = ''; saveMemo(); } });
   </script>
 
 </body>
