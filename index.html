@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>グラフ作成＆お絵かき 共有メモ</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f4f7f6;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .memo-container {
+      background-color: #ffffff;
+      width: 100%;
+      max-width: 900px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    h1 {
+      margin-top: 0; font-size: 24px; color: #2c3e50;
+      border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    
+    /* --- アイコン設定 --- */
+    .icon-title::before { content: '\270E '; color: #3498db; margin-right: 4px; }
+    .icon-color::before { content: '\25A0 '; margin-right: 4px; }
+    .icon-table::before { content: '\229E '; margin-right: 4px; }
+    .icon-replace::before { content: '\21BB '; margin-right: 4px; }
+    .icon-graph::before { content: '\25A4 '; margin-right: 4px; }
+    .icon-draw::before { content: '\270D '; margin-right: 4px; } /* お絵かきアイコン */
+
+    .header-badges { display: flex; gap: 10px; align-items: center; }
+    .role-badge { font-size: 14px; padding: 5px 12px; border-radius: 20px; font-weight: bold; }
+    .viewers { font-size: 14px; background-color: #f1f2f6; color: #57606f; padding: 5px 12px; border-radius: 20px; }
+
+    .url-box {
+      background-color: #f8f9fa; padding: 10px 15px; border-radius: 8px;
+      margin-bottom: 15px; border: 1px solid #e9ecef; display: flex; align-items: center; gap: 10px;
+    }
+    .url-box input { flex: 1; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
+    
+    /* ツールバー */
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; background-color: #f8f9fa;
+      padding: 10px; border: 1px solid #ddd; border-bottom: none; border-radius: 8px 8px 0 0; align-items: center;
+    }
+    .toolbar select, .toolbar input[type="color"], .toolbar input[type="text"], .toolbar button {
+      padding: 5px 10px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; background-color: #fff;
+    }
+    .toolbar button { cursor: pointer; display: flex; align-items: center; }
+    .toolbar button:hover { background-color: #e9ecef; }
+    
+    .toolbar-group { display: flex; gap: 5px; border-left: 2px solid #ddd; padding-left: 10px; }
+    .toolbar-group.right-align { margin-left: auto; }
+
+    /* エディタ本体 */
+    #editor {
+      width: 100%; height: 500px; padding: 15px; font-size: 16px; line-height: 1.6;
+      border: 1px solid #ddd; border-radius: 0 0 8px 8px; box-sizing: border-box;
+      overflow-y: auto; background-color: #fff; transition: background-color 0.3s;
+    }
+    #editor:focus { outline: none; border-color: #3498db; }
+    #editor[contenteditable="false"] { background-color: #fafafa; color: #555; cursor: not-allowed; }
+    #editor table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+    #editor th, #editor td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
+    #editor img { max-width: 100%; height: auto; display: block; margin: 10px 0; border: 1px solid #eee; border-radius: 8px; }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+    .status { font-size: 14px; color: #7f8c8d; }
+    .primary-btn {
+      background-color: #3498db; color: white; border: none;
+      padding: 10px 20px; font-size: 14px; border-radius: 6px; cursor: pointer;
+    }
+    .primary-btn:hover { background-color: #2980b9; }
+
+    /* モーダル (ポップアップ) のスタイル */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-content {
+      background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 500px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px;
+    }
+    .modal-content h3 { margin: 0 0 10px 0; font-size: 18px; color: #2c3e50; }
+    .modal-content label { font-size: 14px; font-weight: bold; display: flex; flex-direction: column; gap: 5px; }
+    .modal-content input[type="text"], .modal-content select {
+      padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
+    }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+    .modal-actions button { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-cancel { background-color: #ecf0f1; color: #333; }
+    .btn-submit { background-color: #2ecc71; color: white; font-weight: bold; }
+
+    /* お絵かきキャンバス */
+    #drawingCanvas { border: 1px solid #bdc3c7; border-radius: 4px; cursor: crosshair; touch-action: none; background-color: #fff; }
+    .canvas-tools { display: flex; gap: 15px; align-items: center; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="memo-container">
+    <h1>
+      <span class="icon-title">共有メモ</span>
+      <div class="header-badges">
+        <span class="role-badge" id="roleBadge">判定中...</span>
+        <span class="viewers" id="viewerCount">現在 1 人</span>
+      </div>
+    </h1>
+    
+    <div class="url-box">
+      <span style="font-size: 14px; font-weight: bold;">現在のURL:</span>
+      <input type="text" id="urlDisplay" readonly>
+      <button class="primary-btn" id="copyUrlBtn" style="padding: 6px 12px;">URLをコピー</button>
+    </div>
+
+    <div class="toolbar" id="toolbar">
+      <select id="fontSelect">
+        <option value="">フォント...</option>
+        <option value="Arial">Arial</option>
+        <option value="'Hiragino Kaku Gothic ProN', sans-serif">ヒラギノ角ゴ</option>
+        <option value="'Yu Mincho', serif">游明朝</option>
+      </select>
+      <input type="color" id="colorPicker" value="#e74c3c" title="文字色">
+      <button id="colorBtn" class="icon-color">色適用</button>
+      <button id="tableBtn" class="icon-table">表挿入</button>
+
+      <div class="toolbar-group">
+        <button id="openGraphBtn" class="icon-graph">グラフ作成</button>
+        <button id="openDrawBtn" class="icon-draw">お絵かき</button>
+      </div>
+
+      <div class="toolbar-group right-align">
+        <input type="text" id="findText" placeholder="検索" style="width: 60px;">
+        <input type="text" id="replaceText" placeholder="置換" style="width: 60px;">
+        <button id="replaceBtn" class="icon-replace">置換</button>
+      </div>
+    </div>
+
+    <div id="editor" contenteditable="false"></div>
+    
+    <div class="controls">
+      <span class="status" id="saveStatus"></span>
+      <button class="primary-btn" id="clearBtn" style="background-color: #e74c3c;">このメモを消去</button>
+    </div>
+  </div>
+
+  <div id="graphModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>📊 グラフを作成して挿入</h3>
+      <label>グラフの種類:
+        <select id="gType">
+          <option value="pie">円グラフ (割合)</option>
+          <option value="doughnut">ドーナツグラフ</option>
+          <option value="bar">棒グラフ</option>
+          <option value="line">折れ線グラフ</option>
+        </select>
+      </label>
+      <label>項目の名前 (カンマ区切り):
+        <input type="text" id="gLabels" value="賛成,反対,どちらでもない" placeholder="例: 賛成,反対">
+      </label>
+      <label>データ / ％ (カンマ区切り):
+        <input type="text" id="gData" value="45,30,25" placeholder="例: 45,30,25">
+      </label>
+      <div class="modal-actions">
+        <button id="closeGraphBtn" class="btn-cancel">キャンセル</button>
+        <button id="insertGraphBtn" class="btn-submit">メモに挿入</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="drawModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <h3>✍️ 手書きでお絵かき</h3>
+      <div class="canvas-tools">
+        <label style="flex-direction: row; align-items: center;">色: <input type="color" id="penColor" value="#000000"></label>
+        <label style="flex-direction: row; align-items: center;">太さ: <input type="range" id="penSize" min="1" max="20" value="3"></label>
+        <button id="clearCanvasBtn" class="btn-cancel" style="margin-left: auto;">全消去</button>
+      </div>
+      <canvas id="drawingCanvas" width="500" height="300"></canvas>
+      <div class="modal-actions">
+        <button id="closeDrawBtn" class="btn-cancel">キャンセル</button>
+        <button id="insertDrawBtn" class="btn-submit">絵をメモに貼る</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 初期設定と権限・同期の仕組み（前回までと同じ） ---
+    const urlParams = new URLSearchParams(window.location.search);
+    let roomId = urlParams.get('room');
+    if (!roomId) {
+      roomId = Math.random().toString(36).substring(2, 10);
+      window.location.search = `?room=${roomId}`;
+    }
+
+    const myId = Math.random().toString(36).substring(2, 10);
+    const channel = new BroadcastChannel('memo_room_' + roomId);
+    
+    const editor = document.getElementById('editor');
+    const saveStatus = document.getElementById('saveStatus');
+    const roleBadge = document.getElementById('roleBadge');
+    
+    const STORAGE_KEY = 'shared_memo_rich_' + roomId;
+    const HOST_KEY = 'shared_memo_host_' + roomId;
+    let saveTimeout;
+    let isHost = false;
+    let savedSelection = null; // モーダルを開く前にカーソル位置を記憶する変数
+
+    document.getElementById('urlDisplay').value = window.location.href;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) editor.innerHTML = savedData;
+    });
+
+    function setRole(role) {
+      if (role === 'host') {
+        isHost = true;
+        editor.setAttribute('contenteditable', 'true');
+        document.getElementById('toolbar').style.display = 'flex';
+        document.getElementById('clearBtn').style.display = 'inline-block';
+        roleBadge.textContent = 'あなたは編集者（1番目）です';
+        roleBadge.className = 'role-badge is-host';
+        roleBadge.style.backgroundColor = '#e8f5e9'; roleBadge.style.color = '#2e7d32';
+        saveStatus.textContent = '最新の状態です';
+      } else {
+        isHost = false;
+        editor.setAttribute('contenteditable', 'false');
+        document.getElementById('toolbar').style.display = 'none';
+        document.getElementById('clearBtn').style.display = 'none';
+        roleBadge.textContent = '閲覧のみ（他の人が編集中）';
+        roleBadge.className = 'role-badge is-guest';
+        roleBadge.style.backgroundColor = '#fff3e0'; roleBadge.style.color = '#e65100';
+        saveStatus.textContent = '※ 編集は最初にアクセスした人のみ可能です';
+      }
+    }
+
+    function maintainHostStatus() {
+      const hostDataStr = localStorage.getItem(HOST_KEY);
+      const now = Date.now();
+      let hostData = hostDataStr ? JSON.parse(hostDataStr) : null;
+
+      if (!hostData || now - hostData.lastSeen > 2500) {
+        localStorage.setItem(HOST_KEY, JSON.stringify({ id: myId, lastSeen: now }));
+        if (!isHost) setRole('host');
+      } else if (hostData.id === myId) {
+        localStorage.setItem(HOST_KEY, JSON.stringify({ id: myId, lastSeen: now }));
+        if (!isHost) setRole('host');
+      } else {
+        if (isHost || roleBadge.textContent === '判定中...') {
+          setRole('guest'); channel.postMessage({ type: 'request_sync' });
+        }
+      }
+    }
+
+    let activeTabs = new Set([myId]);
+    setInterval(() => {
+      maintainHostStatus();
+      activeTabs.clear(); activeTabs.add(myId);
+      channel.postMessage({ type: 'ping', id: myId });
+      document.getElementById('viewerCount').textContent = `現在 ${activeTabs.size} 人`;
+    }, 1000);
+    maintainHostStatus();
+
+    channel.onmessage = (e) => {
+      if (e.data.type === 'ping') {
+        channel.postMessage({ type: 'pong', id: myId }); activeTabs.add(e.data.id);
+      } else if (e.data.type === 'pong') { activeTabs.add(e.data.id);
+      } else if (e.data.type === 'update' && !isHost) {
+        if (editor.innerHTML !== e.data.html) editor.innerHTML = e.data.html;
+      } else if (e.data.type === 'request_sync' && isHost) {
+        channel.postMessage({ type: 'update', html: editor.innerHTML });
+      }
+    };
+
+    function saveMemo() {
+      if (!isHost) return;
+      localStorage.setItem(STORAGE_KEY, editor.innerHTML);
+      const time = new Date().toLocaleTimeString();
+      saveStatus.textContent = `${time} に自動保存しました`;
+      channel.postMessage({ type: 'update', html: editor.innerHTML });
+    }
+
+    editor.addEventListener('input', () => {
+      if (!isHost) return;
+      saveStatus.textContent = '入力中...';
+      clearTimeout(saveTimeout); saveTimeout = setTimeout(saveMemo, 500);
+    });
+
+    // カーソル位置を保存・復元する関数（モーダルからエディタに戻る時に必要）
+    function saveCursorPosition() {
+      const sel = window.getSelection();
+      if (sel.getRangeAt && sel.rangeCount) { savedSelection = sel.getRangeAt(0); }
+    }
+    function restoreCursorPosition() {
+      if (savedSelection) {
+        const sel = window.getSelection();
+        sel.removeAllRanges(); sel.addRange(savedSelection);
+      } else {
+        editor.focus();
+      }
+    }
+
+    // --- 既存ツールバー機能 ---
+    document.getElementById('fontSelect').addEventListener('change', (e) => { document.execCommand('fontName', false, e.target.value); editor.focus(); });
+    document.getElementById('colorPicker').addEventListener('input', (e) => { document.getElementById('colorBtn').style.color = e.target.value; });
+    document.getElementById('colorBtn').addEventListener('click', () => { document.execCommand('foreColor', false, document.getElementById('colorPicker').value); editor.focus(); });
+    document.getElementById('tableBtn').addEventListener('click', () => {
+      document.execCommand('insertHTML', false, `<br><table border="1" style="width:100%;"><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table><br>`);
+      editor.focus();
+    });
+
+    // ==========================================
+    // 📊 グラフ機能の処理
+    // ==========================================
+    const graphModal = document.getElementById('graphModal');
+    
+    // グラフボタンを押した時
+    document.getElementById('openGraphBtn').addEventListener('mousedown', () => {
+      saveCursorPosition(); // カーソルの位置を記憶
+      graphModal.style.display = 'flex';
+    });
+    
+    document.getElementById('closeGraphBtn').addEventListener('click', () => { graphModal.style.display = 'none'; });
+
+    // 「メモに挿入」ボタンを押した時
+    document.getElementById('insertGraphBtn').addEventListener('click', () => {
+      const type = document.getElementById('gType').value;
+      const labels = document.getElementById('gLabels').value.split(',').map(s => s.trim());
+      const dataStr = document.getElementById('gData').value.split(',').map(s => Number(s.trim()));
+
+      // グラフの色付け（自動でカラフルにする）
+      const colors = ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#34495e'];
+      const bgColors = labels.map((_, i) => colors[i % colors.length]);
+
+      // QuickChartに渡すデータを作成
+      const chartConfig = {
+        type: type,
+        data: {
+          labels: labels,
+          datasets: [{ label: 'データ', data: dataStr, backgroundColor: bgColors }]
+        },
+        options: {
+          plugins: {
+            datalabels: { color: '#ffffff', font: { weight: 'bold', size: 14 } } // グラフの中に数値を表示
+          }
+        }
+      };
+
+      // 画像URLを生成
+      const encodedConfig = encodeURIComponent(JSON.stringify(chartConfig));
+      const imgUrl = `https://quickchart.io/chart?c=${encodedConfig}&w=400&h=250`;
+      
+      // エディタに画像を挿入
+      graphModal.style.display = 'none';
+      restoreCursorPosition(); // 記憶していた位置にカーソルを戻す
+      document.execCommand('insertHTML', false, `<br><img src="${imgUrl}" alt="グラフ"><br>`);
+      saveMemo();
+    });
+
+    // ==========================================
+    // ✍️ お絵かきキャンバスの処理
+    // ==========================================
+    const drawModal = document.getElementById('drawModal');
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+
+    // キャンバスを白紙にする関数
+    function resetCanvas() {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // お絵かきボタンを押した時
+    document.getElementById('openDrawBtn').addEventListener('mousedown', () => {
+      saveCursorPosition();
+      resetCanvas(); // 開くたびに白紙にする
+      drawModal.style.display = 'flex';
+    });
+
+    document.getElementById('closeDrawBtn').addEventListener('click', () => { drawModal.style.display = 'none'; });
+    document.getElementById('clearCanvasBtn').addEventListener('click', resetCanvas);
+
+    // マウス・指の座標を取得する
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDraw(e) {
+      isDrawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      e.preventDefault(); // スクロール防止
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = document.getElementById('penColor').value;
+      ctx.lineWidth = document.getElementById('penSize').value;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      e.preventDefault();
+    }
+
+    function stopDraw() { isDrawing = false; ctx.closePath(); }
+
+    // PC用マウスイベント
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mouseout', stopDraw);
+
+    // スマホ用タッチイベント
+    canvas.addEventListener('touchstart', startDraw, {passive: false});
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    canvas.addEventListener('touchend', stopDraw);
+
+    // 「絵をメモに貼る」ボタンを押した時
+    document.getElementById('insertDrawBtn').addEventListener('click', () => {
+      // キャンバスに描いた絵を「Base64（文字データになった画像）」に変換
+      const dataURL = canvas.toDataURL('image/png');
+      
+      drawModal.style.display = 'none';
+      restoreCursorPosition();
+      // そのまま画像としてエディタに埋め込む
+      document.execCommand('insertHTML', false, `<br><img src="${dataURL}" alt="手書きの絵"><br>`);
+      saveMemo();
+    });
+
+    // ==========================================
+    // その他機能
+    // ==========================================
+    document.getElementById('replaceBtn').addEventListener('click', () => {
+      const findStr = document.getElementById('findText').value;
+      const replaceStr = document.getElementById('replaceText').value;
+      if (!findStr) return;
+      function replaceInTextNodes(node) {
+        if (node.nodeType === 3) {
+          const regex = new RegExp(findStr, 'g');
+          if (regex.test(node.nodeValue)) node.nodeValue = node.nodeValue.replace(regex, replaceStr);
+        } else { node.childNodes.forEach(child => replaceInTextNodes(child)); }
+      }
+      replaceInTextNodes(editor); saveMemo(); alert(`置き換え完了しました。`);
+    });
+
+    document.getElementById('copyUrlBtn').addEventListener('click', () => {
+      document.getElementById('urlDisplay').select(); document.execCommand('copy'); alert('URLをコピーしました！');
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if(confirm('本当に消去しますか？')) { editor.innerHTML = ''; saveMemo(); }
+    });
+  </script>
+
+</body>
+</html>
